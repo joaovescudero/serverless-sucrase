@@ -1,0 +1,20 @@
+{
+  "name": "serverless-sucrase",
+  "version": "0.0.1",
+  "description": "A Serverless plugin that performs applies minimal code transformations using Sucrase",
+  "main": "index.js",
+  "repository": "https://github.com/btk5h/serverless-sucrase",
+  "author": "Bryan Terce <bryan.terce@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^8.1.0",
+    "globby": "^10.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^1.18.2",
+    "sucrase": "^3.10.1"
+  },
+  "peerDependencies": {
+    "sucrase": "^3"
+  }
+}
