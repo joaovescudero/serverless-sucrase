@@ -17,8 +17,17 @@ runtimes, such as AWS Lambda. In addition, bundling burdens developers with a fe
 
 ## Installation
 
+Install serverless-sucrase and sucrase from npm:
+
 ```
 npm install --dev serverless-sucrase sucrase
+```
+
+Then add serverless-sucrase to your plugins:
+
+```yaml
+plugins:
+  - serverless-sucrase
 ```
 
 Since serverless-sucrase is not a bundler, it is recommended you use a plugin like
