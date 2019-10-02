@@ -15,9 +15,9 @@ class ServerlessSucrase {
 
     this.hooks = {
       "before:package:createDeploymentArtifacts": this.compile.bind(this),
-      "after:package:createDeploymentArtifacts": this.cleanup.bind(this),
+      // "after:package:createDeploymentArtifacts": this.cleanup.bind(this),
       "before:deploy:function:packageFunction": this.compile.bind(this),
-      "after:deploy:function:packageFunction": this.cleanup.bind(this)
+      "after:deploy:finalize": this.cleanup.bind(this)
     }
   }
 
@@ -26,7 +26,7 @@ class ServerlessSucrase {
   }
 
   async compile() {
-    const { custom } = this.serverless.service
+    const { custom, package: { include = [] }, functions } = this.serverless.service
     const {
       sucrase: { sources = ["src/**/*.js"], ...restOptions } = {}
     } = custom
@@ -43,11 +43,19 @@ class ServerlessSucrase {
     )
 
     const files = await globby(sources)
+    const includeFiles = [...new Set(await globby([
+      ...include,
+      ...Object.keys(functions).filter(key => functions[key].package).reduce(
+        (a,key) => [...a,...functions[key].package.includes], []
+      )
+    ]))]
 
-    for (const file of files) {
+    for (const file of [...files, ...includeFiles]) {
       const originalCode = (await fs.readFile(file)).toString()
 
-      const transformedCode = transform(originalCode, {
+      let transformedCode;
+      if (includeFiles.includes(file)) transformedCode = originalCode
+      else transformedCode = transform(originalCode, {
         transforms: ["imports"],
         ...restOptions
       }).code
@@ -62,6 +70,7 @@ class ServerlessSucrase {
   }
 
   async cleanup() {
+    this.log('Cleaning up Sucrase')
     // copy built files to original service path
     await fs.copy(
       path.join(this.buildPath, this.serverlessFolder),
