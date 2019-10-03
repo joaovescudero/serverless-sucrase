@@ -3,6 +3,7 @@ const fs = require("fs-extra")
 const globby = require("globby")
 const { transform } = require("sucrase")
 const _ = require('lodash')
+const watch = require('node-watch');
 
 class ServerlessSucrase {
   constructor(serverless, options) {
@@ -19,7 +20,7 @@ class ServerlessSucrase {
       "before:deploy:function:packageFunction": this.compile.bind(this),
       "after:deploy:finalize": this.cleanup.bind(this),
       'before:offline:start:init': this.prepareOfflineInvoke.bind(this),
-      'before:offline:start': this.prepareOfflineInvoke.bind(this, true),
+      'before:offline:start': this.prepareOfflineInvoke.bind(this),
       'before:offline:start:end': this.cleanup.bind(this)
     }
   }
@@ -39,7 +40,7 @@ class ServerlessSucrase {
       ...restOptions
     }
 
-    if (silent) this.log(
+    if (!silent) this.log(
       `Transpiling sources matching ${JSON.stringify(
         sources
       )} using configuration ${JSON.stringify(sucraseOptions)}`
@@ -64,7 +65,7 @@ class ServerlessSucrase {
       }).code
 
       const filePath = path.join(this.buildPath, file)
-      if (silent) this.log(`${file} -> ${path.relative(this.servicePath, filePath)}`)
+      if (!silent) this.log(`${file} -> ${path.relative(this.servicePath, filePath)}`)
       await fs.outputFile(filePath, transformedCode)
     }
     this.serverless.config.servicePath = this.buildPath
@@ -76,16 +77,15 @@ class ServerlessSucrase {
   }
 
   async prepareOfflineInvoke() {
-    await this.compile()
+    await this.compile(true)
     const rootDir = this.serverless.config.servicePath.replace(`/${this.buildFolder}`, '')
     _.set(
       this.serverless,
       'service.custom.serverless-offline.location',
       path.relative(this.serverless.config.servicePath, path.join('.sucrase'))
     )
-    await fs.watch(path.join(rootDir, 'modules'), (e, f) => {
-      this.log('Retranspiling')
-      this.compile().catch(ex => console.error(ex))
+    watch(path.join(rootDir, 'modules'), { recursive: true }, (e, f) => {
+      this.compile(true).catch(ex => console.error(ex))
     })
   }
 }
