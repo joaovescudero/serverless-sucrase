@@ -11,7 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "fs-extra": "^8.1.0",
-    "globby": "^10.0.1"
+    "globby": "^10.0.1",
+    "node-watch": "0.6.3"
   },
   "devDependencies": {
     "prettier": "^1.18.2",
