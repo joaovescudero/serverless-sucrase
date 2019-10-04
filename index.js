@@ -77,7 +77,7 @@ class ServerlessSucrase {
   }
 
   async prepareOfflineInvoke() {
-    await this.compile(true)
+    await this.compile(true).catch(ex => ex)
     const rootDir = this.serverless.config.servicePath.replace(`/${this.buildFolder}`, '')
     _.set(
       this.serverless,
@@ -85,7 +85,7 @@ class ServerlessSucrase {
       path.relative(this.serverless.config.servicePath, path.join('.sucrase'))
     )
     watch(path.join(rootDir, 'modules'), { recursive: true }, (e, f) => {
-      this.compile(true).catch(ex => console.error(ex))
+      this.compile(true).catch(ex => ex)
     })
   }
 }
