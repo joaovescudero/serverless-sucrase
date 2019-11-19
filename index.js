@@ -1,5 +1,6 @@
 const path = require("path")
 const fs = require("fs-extra")
+const nfs = require("fs")
 const globby = require("globby")
 const { transform } = require("sucrase")
 const _ = require('lodash')
@@ -18,6 +19,7 @@ class ServerlessSucrase {
     this.hooks = {
       "before:package:createDeploymentArtifacts": this.compile.bind(this),
       "before:deploy:function:packageFunction": this.compile.bind(this),
+      "after:deploy:function:packageFunction": this.moveFiles.bind(this),
       "after:deploy:finalize": this.cleanup.bind(this),
       'before:offline:start:init': this.prepareOfflineInvoke.bind(this),
       'before:offline:start': this.prepareOfflineInvoke.bind(this),
@@ -89,6 +91,19 @@ class ServerlessSucrase {
     watch(sources, { recursive: true }, (e, f) => {
       this.compile(true).catch(ex => ex)
     })
+  }
+
+  async moveFiles() {
+    try {
+      const folderFiles = await fs.readdirSync(path.join(this.buildPath, '.serverless'))
+      for await (let f of folderFiles) {
+        const oldDir = path.join(this.buildPath, '.serverless', f)
+        const newDir = path.join(this.servicePath, '.serverless', f)
+        await nfs.renameSync(oldDir, newDir)
+        await fs.remove(oldDir)
+      }
+      await fs.remove(path.join(this.buildPath, '.serverless'))
+    } catch (ex) {}
   }
 }
 
