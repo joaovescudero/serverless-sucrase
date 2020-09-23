@@ -18,6 +18,7 @@ class ServerlessSucrase {
 
     this.hooks = {
       "before:package:createDeploymentArtifacts": this.compile.bind(this),
+      "after:package:createDeploymentArtifacts": this.moveFiles.bind(this),
       "before:deploy:function:packageFunction": this.compile.bind(this),
       "after:deploy:function:packageFunction": this.moveFiles.bind(this),
       "after:deploy:finalize": this.cleanup.bind(this),
@@ -96,13 +97,14 @@ class ServerlessSucrase {
   async moveFiles() {
     try {
       const folderFiles = await fs.readdirSync(path.join(this.buildPath, '.serverless'))
+      this.log(this.buildPath)
+      this.log(this.servicePath)
       for await (let f of folderFiles) {
         const oldDir = path.join(this.buildPath, '.serverless', f)
         const newDir = path.join(this.servicePath, '.serverless', f)
-        await nfs.renameSync(oldDir, newDir)
-        await fs.remove(oldDir)
+        await fs.copy(oldDir, newDir)
       }
-      await fs.remove(path.join(this.buildPath, '.serverless'))
+      // await fs.remove(path.join(this.buildPath, '.serverless'))
     } catch (ex) {}
   }
 }
